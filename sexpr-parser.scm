@@ -1,8 +1,8 @@
 (load "pc.scm")
 
-(define <sexpr>
+;(define <sexpr>
   ;; fill in the s-expression parser details here
-  )
+;  )
 
 (define <Boolean>
     (new
@@ -18,3 +18,5 @@
 
     	done))
 
+
+(define <VisibleSimpleChar> (range #\! #\delete))
