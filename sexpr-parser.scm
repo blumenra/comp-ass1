@@ -465,7 +465,6 @@
 (define <infix-operation-parser>
   (lambda (op-parser upper-layer-exp)
     (new
-      
       (*parser upper-layer-exp)
       (*parser op-parser)
       (*parser upper-layer-exp)
@@ -477,26 +476,7 @@
         (lambda (num suffix)
           (if (null? suffix) num
           `(,@(append-right num suffix)))))
-      
-      
-      
-      (*parser (char #\())
-        (*parser upper-layer-exp)
-      (*parser op-parser)
-      (*parser upper-layer-exp)
-      (*caten 2)
-      *star
-      (*parser (char #\)))
-      (*caten 4)
-      (*pack-with
-        (lambda (left-sogar num suffix right-sogar)
-          (if (null? suffix) num
-          `(,@(append-right num suffix)))))
-      
-      
-          
-    (*disj 2)
-    
+            
     done)))
 
 
@@ -559,23 +539,20 @@
         (if (car neg)
           `(,(cadr neg) ,num)
           num)))
-    done))
- 
- 
- (define <layer-5>
-  (new
-    (*parser (char #\()
-    (*parser <layer-1>)
-    (*parser (char #\))
+    
+    (*parser (char #\())
+    (*delayed (lambda () <layer-1>))
+    (*parser (char #\)))
 
     (*caten 3)
     (*pack-with
-      (lambda (open num)
-        (if (car neg)
-          `(,(cadr neg) ,num)
-          num)))
+      (lambda (open exp close)
+       exp))
+   
+   (*disj 2)
     
-
+    done))
+ 
 
 (define <layer-3> (<infix-operation-parser> <layer-3-op> <layer-4>))
 (define <layer-2> (<infix-operation-parser> <layer-2-op> <layer-3>))
