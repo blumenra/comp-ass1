@@ -12,11 +12,17 @@
 (define <Comments>
     (new 
         (*parser (char #\;))
+        (*parser <any-char>)
+        (*parser <endOfLine>)
+        (*parser <endOfFile>)
+        (*disj 2)
+        *diff 
+        *star
         
         (*parser <endOfLine>)
         (*parser <endOfFile>)
         (*disj 2)
-        (*caten 2)
+        (*caten 2) done))
         
 (define <Ignore>
     (new
@@ -594,9 +600,10 @@
     (*pack-with 
         (lambda (name exp)
             (if (car exp)
-                (if (eq? (caaadr exp) 'vector-ref)
-                  (fold-left func name (cadr exp))
-                  (cons name (caadr exp)))
+                (cond ((null? (caadr exp)) name)
+                    ((eq? (caaadr exp) 'vector-ref)
+                        (fold-left func name (cadr exp)))
+                  ((cons name (caadr exp))))
                 name)))
     done))
  
@@ -615,15 +622,23 @@
         
         (*parser (char #\())
         (*delayed (lambda () <layer-1>))
+        
         (*parser (char #\,))
-        (*caten 2)
-        (*pack-with (lambda (exp ch) exp))
-        *star
         (*delayed (lambda () <layer-1>))
+        (*caten 2)
+        (*pack-with 
+            (lambda (ch exp) exp))
+        *star
+        
+        (*caten 2)
+        (*pack-with 
+            (lambda (exp lexp) `(,exp ,@lexp)))
+        (*parser <epsilon>)
+        (*disj 2)
         (*parser (char #\)))
-        (*caten 4)
-        (*pack-with (lambda (open listExp exp close)
-            `(,@listExp ,exp)))
+        (*caten 3)
+        (*pack-with (lambda (open listExp close)
+            `(,@listExp)))
             
         (*disj 2)
 
@@ -649,23 +664,6 @@
 (define <layer-1> (<infix-operation-parser> <layer-1-op> <layer-2> append-left))
 
 
-
-(define <parser>
-  (lambda (op-parser upper-layer-exp)
-    (new
-      (*parser upper-layer-exp)
-      (*parser op-parser)
-      (*parser upper-layer-exp)
-      (*caten 2)
-      *star
-
-      (*caten 2)
-      (*pack-with
-        (lambda (num suffix)
-          (if (null? suffix) num
-          `(,@(append-R num suffix)))))
-            
-    done)))
 
 
 
