@@ -6,21 +6,42 @@
         done))
      
 (define <endOfFile> <end-of-input>)
+
+(define <end-of-line-comment-char>
+  (new
+    (*parser <endOfLine>)
+    (*parser <endOfFile>)
+    (*disj 2)
+    done))
         
 (define <whitespace> (range #\nul #\space))
 
-(define <Comments>
-    (new 
+(define <line-comment>
+  (new 
+    (*parser (char #\;))
+    (*parser <any-char>)
+    (*parser <end-of-line-comment-char>)
+    *diff
+    *star
+    (*caten 2)
+    (*pack-with
+      (lambda (semi str)
+        "What to return here?"))
+    
+    done))
+
+(define <exp-comment>
+  (new 
         (*parser (char #\;))
-        (*parser <any-char>)
-        *star
-        (*parser <endOfLine>)
-        (*parser <endOfFile>)
-        (*disj 2)
-        (*caten 3)
-        (*pack-with
-          (lambda (semi str endOf)
-            ""))
+        ; (*parser <any-char>)
+        ; *star
+        ; (*parser <endOfLine>)
+        ; (*parser <endOfFile>)
+        ; (*disj 2)
+        ; (*caten 3)
+        ; (*pack-with
+        ;   (lambda (semi str endOf)
+        ;     ""))
         
 ;         (*parser <endOfLine>)
 ;         (*parser <endOfFile>)
@@ -28,13 +49,21 @@
 ;         (*caten 2)
 
     done))
+
+(define <Comments>
+    (new 
+        (*parser <line-comment>)
+        (*parser <exp-comment>)
+        (*disj 2)
+
+    done))
         
-; (define <Ignore>
-;     (new
-;         (*parser <whitespace>)
-;         (*parser <Comments>)
-;         (*disj 2)
-;         done))
+(define <Ignore>
+    (new
+        (*parser <whitespace>)
+        (*parser <Comments>)
+        (*disj 2)
+        done))
         
         
 (define <Boolean>
@@ -284,10 +313,28 @@
       (string->symbol (string-downcase (list->string symch)))))
    done))
    
+
+; (define comment-pack
+;   (lambda (com1 exp com2) exp))
    
+
+(define ^wrap-with-comments
+  (lambda (parser)
+    (new
+      (*parser <Comments>) *star
+      (*parser parser)
+      (*parser <Comments>) *star
+      (*caten 3)
+      (*pack-with
+        (lambda (com1 parsed-exp com2)
+          parsed-exp))
+      done)))
+
+
 ;;;;;;;;;;;;;;;;;;; <SEXPR>
 (define <sexpr>
   (new
+    (*parser <Comments>)
     (*parser <Boolean>)
     (*parser <Char>)
     (*parser <Number>)
@@ -302,7 +349,7 @@
     (*delayed (lambda () <UnquoteAndSpliced>))
     (*delayed (lambda () <CBName>))
     (*delayed (lambda () <InfixExtension>))
-    (*disj 14)
+    (*disj 15)
   
   done))
 ;;;;;;;;;;;;;;;;;;;; <SEXPR>
