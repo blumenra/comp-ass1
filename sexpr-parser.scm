@@ -13,23 +13,28 @@
     (new 
         (*parser (char #\;))
         (*parser <any-char>)
-        (*parser <endOfLine>)
-        (*parser <endOfFile>)
-        (*disj 2)
-        *diff 
         *star
-        
         (*parser <endOfLine>)
         (*parser <endOfFile>)
         (*disj 2)
-        (*caten 2) done))
+        (*caten 3)
+        (*pack-with
+          (lambda (semi str endOf)
+            ""))
         
-(define <Ignore>
-    (new
-        (*parser <whitespace>)
-        (*parser <Comments>)
-        (*disj 2)
-        done))
+;         (*parser <endOfLine>)
+;         (*parser <endOfFile>)
+;         (*disj 2)
+;         (*caten 2)
+
+    done))
+        
+; (define <Ignore>
+;     (new
+;         (*parser <whitespace>)
+;         (*parser <Comments>)
+;         (*disj 2)
+;         done))
         
         
 (define <Boolean>
@@ -467,6 +472,8 @@
 (define <InfixExpression>
   (new
     (*delayed (lambda () <layer-1>))
+    (*parser <sexpr>)
+    (*disj 2)
   done))
 
 
