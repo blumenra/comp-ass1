@@ -449,9 +449,18 @@
     done))
 
 
+(define func
+  (lambda (list1 list2)
+    (let
+      ((op (car list2))
+      (param (cdr list2)))
+      (cons op (cons list1 param)))))
+
+
 (define append-right
-  (lambda (lst)
-    (fold-right (lambda (l rest) (append (cdr l) `(,@rest))) '() lst)))
+  (lambda (num lst)
+    (fold-left func num lst)))
+    ;(fold-right (lambda (l rest) (append l `(,rest))) `(,num) lst)))
 
 
 (define <infix-operation-parser>
@@ -467,8 +476,8 @@
       (*pack-with
         (lambda (num suffix)
           (if (null? suffix) num
-          ; `(,(car (car suffix)) ,num ,suffix))))
-          `(,(car (car suffix)) ,@(cons num (append-right suffix))))))
+          ;`(,(car (car suffix)) ,@(cons num (append-right suffix))))))
+          `(,@(append-right num suffix)))))
     
     done)))
 
