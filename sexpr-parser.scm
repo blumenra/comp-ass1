@@ -457,13 +457,13 @@
       (cons op (cons list1 param)))))
 
 
-(define append-right
+(define append-left
   (lambda (num lst)
     (fold-left func num lst)))
 
 
 (define <infix-operation-parser>
-  (lambda (op-parser upper-layer-exp)
+  (lambda (op-parser upper-layer-exp handler)
     (new
       (*parser upper-layer-exp)
       (*parser op-parser)
@@ -475,7 +475,7 @@
       (*pack-with
         (lambda (num suffix)
           (if (null? suffix) num
-          `(,@(append-right num suffix)))))
+          `(,@(handler num suffix)))))
             
     done)))
 
@@ -543,20 +543,90 @@
     (*parser (char #\())
     (*delayed (lambda () <layer-1>))
     (*parser (char #\)))
-
     (*caten 3)
     (*pack-with
       (lambda (open exp close)
        exp))
-   
-   (*disj 2)
     
+    
+    (*parser <InfixSymbol>)
+    
+    (*disj 3)
+
+    (*delayed (lambda () <layer-5>))
+    *plus
+    *maybe
+   
+    (*caten 2)
+    (*pack-with 
+        (lambda (name exp)
+            (if (car exp)
+                (if (eq? (caaadr exp) 'vector-ref)
+                  (fold-left func name (cadr exp))
+                  (cons name (caadr exp)))
+                name)))
     done))
  
 
-(define <layer-3> (<infix-operation-parser> <layer-3-op> <layer-4>))
-(define <layer-2> (<infix-operation-parser> <layer-2-op> <layer-3>))
-(define <layer-1> (<infix-operation-parser> <layer-1-op> <layer-2>))
+      
+(define <layer-5>
+    (new
+        (*parser (char #\[))
+        (*delayed (lambda () <layer-1>))
+        (*parser (char #\]))
+        (*caten 3)
+        
+        (*pack-with
+        (lambda (open exp close)
+            (list 'vector-ref exp)))
+        
+        (*parser (char #\())
+        (*delayed (lambda () <layer-1>))
+        (*parser (char #\,))
+        (*caten 2)
+        (*pack-with (lambda (exp ch) exp))
+        *star
+        (*delayed (lambda () <layer-1>))
+        (*parser (char #\)))
+        (*caten 4)
+        (*pack-with (lambda (open listExp exp close)
+            `(,@listExp ,exp)))
+            
+        (*disj 2)
+
+    done))
+
+ (define func
+  (lambda (list1 list2)
+    (let
+      ((op (car list2))
+      (param (cdr list2)))
+      (cons op (cons list1 param)))))
+
+
+(define append-right
+  (lambda (num lst)
+    (fold-right func `(,num) lst)))
+    
+(define <layer-3> (<infix-operation-parser> <layer-3-op> <layer-4> append-right))
+(define <layer-2> (<infix-operation-parser> <layer-2-op> <layer-3> append-left))
+(define <layer-1> (<infix-operation-parser> <layer-1-op> <layer-2> append-left))
 
 
 
+    (define <parser>
+  (lambda (op-parser upper-layer-exp)
+    (new
+      (*parser upper-layer-exp)
+      (*parser op-parser)
+      (*parser upper-layer-exp)
+      (*caten 2)
+      *star
+
+      (*caten 2)
+      (*pack-with
+        (lambda (num suffix)
+          (if (null? suffix) num
+          `(,@(append-R num suffix)))))
+            
+    done)))
