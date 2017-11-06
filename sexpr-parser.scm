@@ -1,6 +1,31 @@
 (load "pc.scm")
 
+(define <endOfLine>
+    (new
+        (*parser (char #\newline))
+        done))
+     
+(define <endOfFile> <end-of-input>)
+        
+(define <whitespace> (range #\nul #\space))
 
+(define <Comments>
+    (new 
+        (*parser (char #\;))
+        
+        (*parser <endOfLine>)
+        (*parser <endOfFile>)
+        (*disj 2)
+        (*caten 2)
+        
+(define <Ignore>
+    (new
+        (*parser <whitespace>)
+        (*parser <Comments>)
+        (*disj 2)
+        done))
+        
+        
 (define <Boolean>
     (new
     	(*parser (word-ci "#t"))
