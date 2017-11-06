@@ -457,6 +457,14 @@
       (cons op (cons list1 param)))))
 
 
+(define func2
+  (lambda (list1 list2)
+    (let
+      ((op (car list2))
+      (param (cadr list2)))
+      (cons op (cons param `(,list1))))))
+
+
 (define append-left
   (lambda (num lst)
     (fold-left func num lst)))
@@ -596,25 +604,28 @@
 
     done))
 
- (define func
-  (lambda (list1 list2)
-    (let
-      ((op (car list2))
-      (param (cdr list2)))
-      (cons op (cons list1 param)))))
+
+(define (reverse l) 
+   (fold-left (lambda (i j) 
+                (cons j i)) 
+              '() 
+              l)) 
 
 
-(define append-right
+(define append-temp
   (lambda (num lst)
-    (fold-right func `(,num) lst)))
+    (let ((reversed-list (reverse (cons (list (caar lst) num) lst)))
+            (last-element (car (reverse lst))))
+      (fold-left func2 (cadr last-element) (cdr reversed-list)))))
     
-(define <layer-3> (<infix-operation-parser> <layer-3-op> <layer-4> append-right))
+
+(define <layer-3> (<infix-operation-parser> <layer-3-op> <layer-4> append-temp))
 (define <layer-2> (<infix-operation-parser> <layer-2-op> <layer-3> append-left))
 (define <layer-1> (<infix-operation-parser> <layer-1-op> <layer-2> append-left))
 
 
 
-    (define <parser>
+(define <parser>
   (lambda (op-parser upper-layer-exp)
     (new
       (*parser upper-layer-exp)
@@ -630,3 +641,10 @@
           `(,@(append-R num suffix)))))
             
     done)))
+
+
+
+
+
+
+
