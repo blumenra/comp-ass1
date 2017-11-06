@@ -410,7 +410,7 @@
     (*parser (char #\*))
     (*parser (word "**"))
     (*parser (char #\^))
-    (*parser (word "/."))
+    (*parser (char #\/))
     (*disj 6)
     done))
 
@@ -460,12 +460,12 @@
 (define append-right
   (lambda (num lst)
     (fold-left func num lst)))
-    ;(fold-right (lambda (l rest) (append l `(,rest))) `(,num) lst)))
 
 
 (define <infix-operation-parser>
   (lambda (op-parser upper-layer-exp)
     (new
+      
       (*parser upper-layer-exp)
       (*parser op-parser)
       (*parser upper-layer-exp)
@@ -476,8 +476,26 @@
       (*pack-with
         (lambda (num suffix)
           (if (null? suffix) num
-          ;`(,(car (car suffix)) ,@(cons num (append-right suffix))))))
           `(,@(append-right num suffix)))))
+      
+      
+      
+      (*parser (char #\())
+        (*parser upper-layer-exp)
+      (*parser op-parser)
+      (*parser upper-layer-exp)
+      (*caten 2)
+      *star
+      (*parser (char #\)))
+      (*caten 4)
+      (*pack-with
+        (lambda (left-sogar num suffix right-sogar)
+          (if (null? suffix) num
+          `(,@(append-right num suffix)))))
+      
+      
+          
+    (*disj 2)
     
     done)))
 
@@ -542,6 +560,21 @@
           `(,(cadr neg) ,num)
           num)))
     done))
+ 
+ 
+ (define <layer-5>
+  (new
+    (*parser (char #\()
+    (*parser <layer-1>)
+    (*parser (char #\))
+
+    (*caten 3)
+    (*pack-with
+      (lambda (open num)
+        (if (car neg)
+          `(,(cadr neg) ,num)
+          num)))
+    
 
 
 (define <layer-3> (<infix-operation-parser> <layer-3-op> <layer-4>))
