@@ -436,21 +436,6 @@
 (define <InfixExpression>
   (new
     (*delayed (lambda () <layer-1>))
-    ; (*delayed (lambda () <InfixAdd>))
-    ; ;(*delayed (lambda () <InfixNeg>))
-    ; (*delayed (lambda () <InfixSub>))
-    ; (*delayed (lambda () <InfixMul>))
-    ; (*delayed (lambda () <InfixDiv>))
-    ; (*delayed (lambda () <InfixPow>))
-    ; ;(*delayed (lambda () <InfixArrayGet>))
-    ; ;(*delayed (lambda () <InfixFuncall>))
-    ; ;(*delayed (lambda () <InfixParen>))
-    ; (*parser <Number>)
-    ; (*parser <InfixSymbol>)
-    ; (*parser <InfixSexprEscape>)
-    ; (*disj 8)
-    ; ;;(*pack-with)
-  
   done))
 
 
@@ -467,24 +452,6 @@
 (define append-right
   (lambda (lst)
     (fold-right (lambda (l rest) (append (cdr l) `(,@rest))) '() lst)))
-
-
-
-
-; (define <infix-operation-parser>
-;   (lambda (op-parser)
-;     (new
-;       (*parser <Number>)
-;       (*parser op-parser)
-;       (*parser <InfixExpression>)
-;       (*caten 3)
-;       (*pack-with
-;         (lambda (num op suffix)
-;           `(,op ,@(list num suffix))))
-
-;     done)))
-
-
 
 
 (define <infix-operation-parser>
@@ -531,6 +498,7 @@
 (define <op-add> (^<charOp->symbol> #\+))
 (define <op-sub> (^<charOp->symbol> #\-))
 
+
 (define <layer-1-op>
   (new
     (*parser <op-add>)
@@ -538,12 +506,14 @@
     (*disj 2)
     done))
 
+
 (define <layer-2-op>
   (new
     (*parser <op-mul>)
     (*parser <op-div>)
     (*disj 2)
     done))
+
 
 (define <layer-3-op>
   (new
@@ -564,56 +534,10 @@
           num)))
     done))
 
+
 (define <layer-3> (<infix-operation-parser> <layer-3-op> <layer-4>))
 (define <layer-2> (<infix-operation-parser> <layer-2-op> <layer-3>))
 (define <layer-1> (<infix-operation-parser> <layer-1-op> <layer-2>))
-
-; (define <layer-1>
-;   (new
-;     (*delayed (lambda () <layer-2>))
-;     (*parser (char #\+))
-;     (*parser (char #\-))
-;     (*disj 2)
-;     (*delayed (lambda () <layer-2>))
-;     (*caten 2)
-;     *star
-
-;     (*pack-with
-;       (lambda (num suffix)
-;         `(,(car (car suffix)) ,@(cons num (append-right suffix)))))
-;     done))
-
-; (define <layer-2>
-;   (new
-;     (*delayed (lambda () <InfixMul>))
-;     (*delayed (lambda () <InfixDiv>))
-;     (*disj 2)
-;     done))
-
-; (define <layer-3>
-;   (new
-;     (*delayed (lambda () <InfixPow>))
-;     done))
-
-; (define <layer-5>
-;   (new
-;     (*delayed (lambda () <Number>))
-;     done))
-
-
-
-
-
-
-
-; (define <InfixPow> (<infix-operation-parser> <PowerSymbol>))
-; (define <InfixMul> (<infix-operation-parser> <op-mul>))
-; (define <InfixDiv> (<infix-operation-parser> <op-div>))
-; (define <InfixAdd> (<infix-operation-parser> <op-add>))
-; (define <InfixSub> (<infix-operation-parser> <op-sub>))
-
-
-
 
 
 
