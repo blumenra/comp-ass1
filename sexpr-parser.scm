@@ -22,27 +22,65 @@
         (*parser <endOfLine>)
         (*parser <endOfFile>)
         (*disj 2)
-        (*caten 2) done))
+        (*caten 3)
         
-(define <Ignore>
+        
+        (*parser (word "#;"))
+        (*delayed (lambda () <sexpr>))
+        (*caten 2)
+        
+        (*disj 2)
+        done))
+        
+(define <InfixComments>
+    (new 
+        (*parser (char #\;))
+        (*parser <any-char>)
+        (*parser <endOfLine>)
+        (*parser <endOfFile>)
+        (*disj 2)
+        *diff 
+        *star
+        
+        (*parser <endOfLine>)
+        (*parser <endOfFile>)
+        (*disj 2)
+        (*caten 3)
+        
+        
+        (*parser (word "#;"))
+        (*delayed (lambda () <InfixExpression>))
+        (*caten 2)
+        
+        (*disj 2)
+        done))
+        
+(define <Skip>
     (new
         (*parser <whitespace>)
         (*parser <Comments>)
         (*disj 2)
         done))
         
-        
+(define <InfixSkip>
+    (new
+        (*parser <whitespace>)
+        (*parser <InfixComments>)
+        (*disj 2)
+        done))
+    
+    
 (define <Boolean>
     (new
-    	(*parser (word-ci "#t"))
+        (*parser (word-ci "#t"))
     	(*parser (word-ci "#f"))
     	(*disj 2)
     	(*pack (lambda (list)
-    		(let ((l (char-downcase (cadr list))))
- 				(cond
- 					((char=? l #\t) #t)
- 					((char=? l #\f) #f)
- 					(else (display "The value is no valid!"))))))
+            (let ((l (char-downcase (cadr list))))
+                (cond
+                    ((char=? l #\t) #t)
+                    ((char=? l #\f) #f)
+                    (else (display "The value is no valid!"))))))
 
     	done))
 
@@ -51,8 +89,7 @@
     (new
     	(*parser (word "#\\"))
     	(*pack 
-    		(lambda (_)
-    			_))
+            (lambda (_) _))
     	done))
 
 
@@ -280,12 +317,30 @@
    done))
    
    
+   
+(define wrap-parser-with-skips
+    (lambda (parser)
+        (new
+        
+        (*parser <Skip>) *star
+        (*parser parser)
+        (*parser <Skip>) *star
+        (*caten 3)
+        (*pack-with
+            (lambda (skip-l sexp skip-r)
+                sexp))
+        done)
+
+    ))
+   
 ;;;;;;;;;;;;;;;;;;; <SEXPR>
 (define <sexpr>
   (new
-    (*parser <Boolean>)
-    (*parser <Char>)
-    (*parser <Number>)
+    (*parser (wrap-parser-with-skips <Boolean>))
+    (*parser (wrap-parser-with-skips <Char>))
+    (*parser (wrap-parser-with-skips <Number>))
+
+    
     (*parser <String>)
     (*parser <Symbol>)
     (*delayed (lambda () <ProperList>))
@@ -314,17 +369,20 @@
 
 (define <ProperList>
     (new
-        (*parser (word "()"))
+        (*parser (char #\())
+        (*parser <Skip>) *star
+        (*parser (char #\)))
+        (*caten 3)
         (*pack (lambda (_) '()))
         
         (*parser (char #\())
-        (*parser <sexpr-with-space>)
-        *star
         (*parser <sexpr>)
+        *plus
+        
         (*parser (char #\)))
-        (*caten 4)
+        (*caten 3)
         (*pack-with
-                (lambda (c1 sexp* sexp c2) (append sexp* `(,sexp))))
+                (lambda (c1  sexp*   c2) sexp* ))
         (*disj 2)
                 
     done))  
