@@ -11,10 +11,8 @@
 
 (define <Comments>
     (new 
-        (*parser (char #\;))
-        (*parser <any-char>)
-        (*parser <endOfLine>)
-        (*parser <endOfFile>)
+        (*parser <line-comment>)
+        (*parser <exp-comment>)
         (*disj 2)
         *diff 
         *star
@@ -31,6 +29,7 @@
         
         (*disj 2)
         done))
+
         
 (define <InfixComments>
     (new 
@@ -317,7 +316,6 @@
    done))
    
    
-   
 (define wrap-parser-with-skips
     (lambda (parser)
         (new
@@ -339,8 +337,7 @@
     (*parser (wrap-parser-with-skips <Boolean>))
     (*parser (wrap-parser-with-skips <Char>))
     (*parser (wrap-parser-with-skips <Number>))
-
-    
+   
     (*parser <String>)
     (*parser <Symbol>)
     (*delayed (lambda () <ProperList>))
@@ -352,7 +349,7 @@
     (*delayed (lambda () <UnquoteAndSpliced>))
     (*delayed (lambda () <CBName>))
     (*delayed (lambda () <InfixExtension>))
-    (*disj 14)
+    (*disj 15)
   
   done))
 ;;;;;;;;;;;;;;;;;;;; <SEXPR>
@@ -525,6 +522,8 @@
 (define <InfixExpression>
   (new
     (*delayed (lambda () <layer-1>))
+    (*parser <sexpr>)
+    (*disj 2)
   done))
 
 
