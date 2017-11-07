@@ -624,6 +624,9 @@
     (*parser <op-sub>)
     *maybe
     (*parser <Number>)
+    (*parser <InfixSymbol>)
+    (*delayed (lambda () <InfixParen>))
+    (*disj 3)
     (*caten 2)
     (*pack-with
       (lambda (neg num)
