@@ -149,6 +149,9 @@
     (*parser <HexChar>)
     *plus
     (*caten 2)
+    (*pack-with
+      (lambda (prefix hexNum)
+        hexNum))
     done))
 
     
@@ -175,9 +178,9 @@
 (define <Char>
     (new
         (*parser <CharPrefix>)
+        (*parser <HexUnicodeChar>)
         (*parser <NamedChar>)
         (*parser <VisibleSimpleChar>)
-        (*parser <HexUnicodeChar>)
         (*disj 3)
         (*caten 2)
         (*pack (lambda (list)
