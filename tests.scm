@@ -58,7 +58,7 @@
 			(display "\033[1;31m ##### SOME TESTS FAILED #####\033[0m\n")
                         (display failedTestsNum)
                         (display " out of ")
-                        (display (+ failedTestsNum failedTestsNum))
+                        (display (+ failedTestsNum succeededTestsNum))
 			(display " tests failed:(((")
 			(newline)))
 		(newline))
