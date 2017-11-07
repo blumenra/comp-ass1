@@ -383,15 +383,14 @@
 (define <ImproperList>
     (new
         (*parser (char #\())
-        (*parser <sexpr-with-space>)
+        (*parser <sexpr>)
         *plus
         (*parser (char #\.))
-        (*parser (char #\space))
         (*parser <sexpr>)
         (*parser (char #\)))
-        (*caten 6)
+        (*caten 5)
         (*pack-with
-                (lambda (c1 sexp1 dot space sexp2 c2) `(,@sexp1 . ,sexp2)))          
+                (lambda (c1 sexp1 dot sexp2 c2) `(,@sexp1 . ,sexp2)))          
     done))
     
 
@@ -402,13 +401,12 @@
         
         (*parser (char #\#))
         (*parser (char #\())
-        (*parser <sexpr-with-space>)
-        *star
         (*parser <sexpr>)
+        *star
         (*parser (char #\)))
-        (*caten 5)
+        (*caten 4)
         (*pack-with
-                (lambda (hash c1 sexp* sexp c2) (list->vector (append sexp* `(,sexp)))))
+                (lambda (hash c1 sexp* c2) (list->vector sexp*)))
         (*disj 2)
                     
     done))  
