@@ -11,8 +11,10 @@
 
 (define <Comments>
     (new 
-        (*parser <line-comment>)
-        (*parser <exp-comment>)
+        (*parser (char #\;))
+        (*parser <any-char>)
+        (*parser <endOfLine>)
+        (*parser <endOfFile>)
         (*disj 2)
         *diff 
         *star
@@ -29,7 +31,6 @@
         
         (*disj 2)
         done))
-
         
 (define <InfixComments>
     (new 
@@ -315,41 +316,37 @@
       (string->symbol (string-downcase (list->string symch)))))
    done))
    
-   
 (define wrap-parser-with-skips
     (lambda (parser)
         (new
+            (*parser <Skip>) *star
+            (*parser parser)
+            (*parser <Skip>) *star
+            (*caten 3)
+            (*pack-with
+                (lambda (skip-l sexp skip-r)
+                    sexp))
+            done)))
         
-        (*parser <Skip>) *star
-        (*parser parser)
-        (*parser <Skip>) *star
-        (*caten 3)
-        (*pack-with
-            (lambda (skip-l sexp skip-r)
-                sexp))
-        done)
-
-    ))
-   
 ;;;;;;;;;;;;;;;;;;; <SEXPR>
 (define <sexpr>
   (new
+  
     (*parser (wrap-parser-with-skips <Boolean>))
     (*parser (wrap-parser-with-skips <Char>))
     (*parser (wrap-parser-with-skips <Number>))
-   
-    (*parser <String>)
-    (*parser <Symbol>)
-    (*delayed (lambda () <ProperList>))
-    (*delayed (lambda () <ImproperList>))
-    (*delayed (lambda () <Vector>))
-    (*delayed (lambda () <Quoted>))
-    (*delayed (lambda () <QuasiQuoted>))
-    (*delayed (lambda () <Unquoted>))
-    (*delayed (lambda () <UnquoteAndSpliced>))
-    (*delayed (lambda () <CBName>))
-    (*delayed (lambda () <InfixExtension>))
-    (*disj 15)
+    (*parser (wrap-parser-with-skips <String>))
+    (*parser (wrap-parser-with-skips <Symbol>))
+    (*delayed (lambda () (wrap-parser-with-skips <ProperList>)))
+    (*delayed (lambda () (wrap-parser-with-skips <ImproperList>)))
+    (*delayed (lambda () (wrap-parser-with-skips <Vector>)))
+    (*delayed (lambda () (wrap-parser-with-skips <Quoted>)))
+    (*delayed (lambda () (wrap-parser-with-skips <QuasiQuoted>)))
+    (*delayed (lambda () (wrap-parser-with-skips <Unquoted>)))
+    (*delayed (lambda () (wrap-parser-with-skips <UnquoteAndSpliced>)))
+    (*delayed (lambda () (wrap-parser-with-skips <CBName>)))
+    (*delayed (lambda () (wrap-parser-with-skips <InfixExtension>)))
+    (*disj 14)
   
   done))
 ;;;;;;;;;;;;;;;;;;;; <SEXPR>
@@ -375,11 +372,10 @@
         (*parser (char #\())
         (*parser <sexpr>)
         *plus
-        
         (*parser (char #\)))
         (*caten 3)
         (*pack-with
-                (lambda (c1  sexp*   c2) sexp* ))
+                (lambda (c1 sexp* c2) sexp*))
         (*disj 2)
                 
     done))  
