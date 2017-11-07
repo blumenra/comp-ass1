@@ -151,7 +151,7 @@
     (*caten 2)
     (*pack-with
       (lambda (prefix hexNum)
-        hexNum))
+        (integer->char (car hexNum))))
     done))
 
     
@@ -342,6 +342,7 @@
    (*parser (char #\?))
    (*parser (char #\/))
    (*disj 14)
+
    done))
 
 
@@ -505,9 +506,13 @@
 
 (define <InfixSymbol>
   (new
-    (*parser <Symbol>)
+    (*parser <SymbolChar>)
     (*parser <infix-Special-Symbol>)
     *diff
+    *star
+    (*pack
+      (lambda (l)
+        (string->symbol (list->string l))))
     done))
 
 
