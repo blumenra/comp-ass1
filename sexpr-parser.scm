@@ -143,17 +143,28 @@
    done))
 
    
+
+;(define <HexUnicodeChar>
+ ;   (new 
+  ;  (*parser (char-ci #\x))
+   ; (*parser <HexChar>)
+    ;*plus
+    ;(*caten 2)
+    ;(*pack-with
+    ;  (lambda (prefix hexNum)
+     ;   hexNum))
+    ;done))
+
 (define <HexUnicodeChar>
     (new 
-    (*parser (char-ci #\x))
-    (*parser <HexChar>)
-    *plus
-    (*caten 2)
-    (*pack-with
-      (lambda (prefix hexNum)
-        (integer->char (car hexNum))))
-    done))
-
+        (*parser (char-ci #\x))
+        (*parser <HexChar>)
+        *plus
+        (*caten 2)
+        (*pack-with 
+            (lambda (ch hexch)
+                (integer->char (string->number (list->string hexch) 16))))
+       done))
     
 (define ^<NamedChar>
     (lambda (str ch)
@@ -189,12 +200,13 @@
         
         done))
                   
-    
+   
 (define <Natural>
     (new
         (*parser <digit-0-9>)
         *plus
-        
+        (*parser <letter-a-z>)
+        *not-followed-by
          (*pack
             (lambda (numList)
                 (string->number (list->string numList))))
@@ -327,21 +339,21 @@
 
 (define <SymbolChar>
   (new
-   (*parser <digit-0-9>)
-   (*parser <letter-a-z>)
-   (*parser (char #\!))
-   (*parser (char #\$))
-   (*parser (char #\^))
-   (*parser (char #\*))
-   (*parser (char #\-))
-   (*parser (char #\_))
-   (*parser (char #\=))
-   (*parser (char #\+))
-   (*parser (char #\<))
-   (*parser (char #\>))
-   (*parser (char #\?))
-   (*parser (char #\/))
-   (*disj 14)
+    (*parser <digit-0-9>)
+    (*parser <letter-a-z>)
+    (*parser (char #\!))
+    (*parser (char #\$))
+    (*parser (char #\^))
+    (*parser (char #\*))
+    (*parser (char #\-))
+    (*parser (char #\_))
+    (*parser (char #\=))
+    (*parser (char #\+))
+    (*parser (char #\<))
+    (*parser (char #\>))
+    (*parser (char #\?))
+    (*parser (char #\/))
+    (*disj 14)
 
    done))
 
@@ -509,10 +521,10 @@
     (*parser <SymbolChar>)
     (*parser <infix-Special-Symbol>)
     *diff
-    *star
+    *plus
     (*pack
-      (lambda (l)
-        (string->symbol (list->string l))))
+        (lambda (sym)
+            (string->symbol (string-downcase (list->string sym)))))
     done))
 
 
@@ -642,13 +654,15 @@
 
     (*parser <op-sub>)
     *maybe
+    (*parser <InfixSkip>) *star
     (*parser <Number>)
     (*parser <InfixSymbol>)
     (*delayed (lambda () <InfixParen>))
-    (*disj 3)
-    (*caten 2)
+    (*parser <InfixSexprEscape>)
+    (*disj 4)
+    (*caten 3)
     (*pack-with
-      (lambda (neg num)
+      (lambda (neg skip num)
         (if (car neg)
           `(,(cadr neg) ,num)
           num)))
@@ -684,11 +698,24 @@
 
     done))
 
-
-(define <InfixFuncall>
+(define <empty-function>
   (new
 
     (*parser (char #\())
+
+    (*parser <InfixSkip>) *star
+    (*parser (char #\)))
+    (*caten 3)
+
+    (*pack (lambda (_) '()))
+
+    done))
+
+(define <non-empty-function>
+  (new
+
+    (*parser (char #\()) 
+    
     (*parser <InfixExpression>)
     
     (*parser (char #\,))
@@ -701,31 +728,49 @@
     (*caten 2)
     (*pack-with 
         (lambda (exp lexp) `(,exp ,@lexp)))
+    
     (*parser <epsilon>)
+    
     (*disj 2)
+    
     (*parser (char #\)))
     (*caten 3)
     (*pack-with (lambda (open listExp close)
         `(,@listExp)))
+
+    done))
     
+(define <InfixFuncall>
+  (new
+
+    (*parser <empty-function>)
+    (*parser <non-empty-function>)
+    (*disj 2)
+
     done))
 
 
 (define <layer-4-exp>
   (new
-
+  
     (*parser <InfixNeg>)
     (*parser <InfixParen>)
+    (*parser <InfixSexprEscape>)
     (*parser <InfixSymbol>)
-    (*disj 3)
+    (*disj 4)
 
+    
   done))
 
+(define func3
+    (lambda (name exp)
+        (cons name exp)))
 
 (define <layer-4>
   (new
 
     (*parser (wrap-parser-with-skips <InfixSkip> <layer-4-exp>))
+    
 
     (*delayed (lambda () <layer-5>))
     *plus
@@ -737,12 +782,13 @@
     (*pack-with 
         (lambda (name exp skip)
             (if (car exp)
-                (cond ((null? (caadr exp)) name)
+                (cond ((null? (caadr exp)) `(,name))
                     ((eq? (caaadr exp) 'vector-ref)
                         (fold-left func name (cadr exp)))
-                  ((cons name (caadr exp))))
+                  ((fold-left func3 name (cadr exp))))
                 name)))
     done))
+
 
     
 (define <layer-5>
