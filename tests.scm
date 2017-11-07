@@ -5,6 +5,7 @@
 (define <my-sexpr> <sexpr>)   
 
 (define failedTestsNum 0)
+(define succeededTestsNum 0)
 
 ; (define accFaildAndReturnFalse
 ; 	(lambda ()
@@ -17,8 +18,11 @@
 			(display input)
 			(display ": ")			
 			(cond ((equal? my-res staff-res)
-				(display "\033[1;32mSuccess!\033[0m") (newline) #t)
-				(else (display "\033[1;31mFailed!\033[0m ")
+				(display "\033[1;32mSuccess!\033[0m")
+                                (newline)
+                                (set! succeededTestsNum (+ succeededTestsNum 1))
+                                #t)
+                              	(else (display "\033[1;31mFailed!\033[0m ")
 					(display ", expected: ")					
 					(display staff-res)
 					(display ", actual:")
@@ -52,7 +56,9 @@
 		(display "\033[1;32m !!!!! ALL TESTS SUCCEEDED !!!!\033[0m\n"))
 		(else
 			(display "\033[1;31m ##### SOME TESTS FAILED #####\033[0m\n")
-			(display failedTestsNum)
+                        (display failedTestsNum)
+                        (display " out of ")
+                        (display (+ failedTestsNum failedTestsNum))
 			(display " tests failed:(((")
 			(newline)))
 		(newline))
