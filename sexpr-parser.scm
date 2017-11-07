@@ -39,9 +39,7 @@
 (define <InfixExpression>
   (new
     (*delayed (lambda () <layer-1>))
-    (*parser <sexpr>)
-    (*disj 2)
-  done))
+    done))
 ;;;;;;;;;;;;;;;;;;;; <INF-EXPR>
 
 
@@ -98,7 +96,8 @@
         (*parser <InfixComments>)
         (*disj 2)
         done))
-    
+
+
     
 (define <Boolean>
     (new
@@ -673,6 +672,7 @@
 (define <InfixParen>
   (new
     
+
     (*parser (char #\())
     (*parser <InfixExpression>)
     (*parser (char #\)))
@@ -680,7 +680,6 @@
     (*pack-with
       (lambda (open exp close)
        exp))
-
     done))
 
 
@@ -804,9 +803,6 @@
 (define <layer-3> (<infix-operation-parser> <layer-3-op> <layer-4> append-temp))
 (define <layer-2> (<infix-operation-parser> <layer-2-op> <layer-3> append-left))
 (define <layer-1> (<infix-operation-parser> <layer-1-op> <layer-2> append-left))
-
-
-
 
 
 
