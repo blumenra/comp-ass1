@@ -653,6 +653,7 @@
 
     (*parser <op-sub>)
     *maybe
+    
     (*parser <InfixSkip>) *star
     (*parser <Number>)
     (*parser <InfixSymbol>)
@@ -663,7 +664,9 @@
     (*pack-with
       (lambda (neg skip num)
         (if (car neg)
-          `(,(cadr neg) ,num)
+            (if (and (null? skip) (number? num))
+                (* -1 num)
+                `(,(cadr neg) ,num))
           num)))
     
     done))
