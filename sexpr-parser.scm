@@ -1,5 +1,50 @@
 (load "pc.scm")
 
+(define wrap-parser-with-skips
+    (lambda (skiper parser)
+        (new
+            (*parser skiper) *star
+            (*parser parser)
+            (*parser skiper) *star
+            (*caten 3)
+            (*pack-with
+                (lambda (skip-l sexp skip-r)
+                    sexp))
+            done)))
+        
+;;;;;;;;;;;;;;;;;;; <SEXPR>
+(define <sexpr>
+  (new
+  
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <Boolean>)))
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <Char>)))
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <Number>)))
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <String>)))
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <Symbol>)))
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <ProperList>)))
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <ImproperList>)))
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <Vector>)))
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <Quoted>)))
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <QuasiQuoted>)))
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <Unquoted>)))
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <UnquoteAndSpliced>)))
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <CBName>)))
+    (*delayed (lambda () (wrap-parser-with-skips <PrefixSkip> <InfixExtension>)))
+    (*disj 14)
+  
+  done))
+;;;;;;;;;;;;;;;;;;;; <SEXPR>
+
+;;;;;;;;;;;;;;;;;;;; <INF-EXPR>
+(define <InfixExpression>
+  (new
+    (*delayed (lambda () <layer-1>))
+    (*parser <sexpr>)
+    (*disj 2)
+  done))
+;;;;;;;;;;;;;;;;;;;; <INF-EXPR>
+
+
 (define <endOfLine>
     (new
         (*parser (char #\newline))
@@ -9,7 +54,8 @@
         
 (define <whitespace> (range #\nul #\space))
 
-(define <Comments>
+(define ^<comments>
+  (lambda (exp-parser)
     (new 
         (*parser (char #\;))
         (*parser <any-char>)
@@ -26,39 +72,23 @@
         
         
         (*parser (word "#;"))
-        (*delayed (lambda () <sexpr>))
+        (*delayed (lambda () exp-parser))
         (*caten 2)
         
         (*disj 2)
-        done))
+    done)))
+
+
+(define <PrefixComments> (^<comments> <sexpr>))
+
+
+(define <InfixComments> (^<comments> <InfixExpression>))
+
         
-(define <InfixComments>
-    (new 
-        (*parser (char #\;))
-        (*parser <any-char>)
-        (*parser <endOfLine>)
-        (*parser <endOfFile>)
-        (*disj 2)
-        *diff 
-        *star
-        
-        (*parser <endOfLine>)
-        (*parser <endOfFile>)
-        (*disj 2)
-        (*caten 3)
-        
-        
-        (*parser (word "#;"))
-        (*delayed (lambda () <InfixExpression>))
-        (*caten 2)
-        
-        (*disj 2)
-        done))
-        
-(define <Skip>
+(define <PrefixSkip>
     (new
         (*parser <whitespace>)
-        (*parser <Comments>)
+        (*parser <PrefixComments>)
         (*disj 2)
         done))
         
@@ -95,11 +125,15 @@
 
 (define <VisibleSimpleChar> (range #\! #\delete))
 
+
 (define <digit-0-9> (range #\0 #\9))
+
 
 (define <letter-a-f> (range-ci #\a #\f))
 
+
 (define <letter-a-z> (range-ci #\a #\z))
+
 
 (define <HexChar>
   (new
@@ -107,6 +141,7 @@
    (*parser <letter-a-f>)
    (*disj 2)
    done))
+
    
 (define <HexUnicodeChar>
     (new 
@@ -115,12 +150,14 @@
     *plus
     (*caten 2)
     done))
+
     
 (define ^<NamedChar>
     (lambda (str ch)
     (new (*parser (word-ci str)) 
         (*pack (lambda (_) ch))
     done)))
+
     
 (define <NamedChar>
     (new
@@ -158,10 +195,7 @@
          (*pack
             (lambda (numList)
                 (string->number (list->string numList))))
-        done))
-        
-        
-        
+        done))       
         
         
 (define <op>
@@ -210,8 +244,6 @@
        done))
        
         
-        
-        
 (define <Number>
     (new
         (*parser <Fraction>)
@@ -220,6 +252,7 @@
         (*disj 2)
     done))
     
+
 (define <NotLiteral>
     (new 
         (*parser (char #\\))
@@ -242,6 +275,7 @@
 	 (*pack (lambda (_) ch))
 	 done))) 
    
+
 (define <StringMetaChar>
   (new (*parser (^<meta-char> "\\\\" #\\))
        (*parser (^<meta-char> "\\\"" #\"))
@@ -251,6 +285,7 @@
        (*parser (^<meta-char> "\\f" #\page))
        (*disj 6)
        done)) 
+
 
 (define <StringHexChar>
     (new
@@ -263,7 +298,6 @@
          (lambda (x hex c) 
            (integer->char (string->number (list->string hex) 16))))
      done))
-
 
 
 (define <StringChar>
@@ -285,7 +319,7 @@
         (*pack-with
                 (lambda (c1 str c2)
                 (list->string str)))
-  done))  ;Check whitespaces
+  done))
   
 
 (define <SymbolChar>
@@ -307,6 +341,7 @@
    (*disj 14)
    done))
 
+
 (define <Symbol>
   (new
    (*parser <SymbolChar>)
@@ -316,41 +351,6 @@
       (string->symbol (string-downcase (list->string symch)))))
    done))
    
-(define wrap-parser-with-skips
-    (lambda (parser)
-        (new
-            (*parser <Skip>) *star
-            (*parser parser)
-            (*parser <Skip>) *star
-            (*caten 3)
-            (*pack-with
-                (lambda (skip-l sexp skip-r)
-                    sexp))
-            done)))
-        
-;;;;;;;;;;;;;;;;;;; <SEXPR>
-(define <sexpr>
-  (new
-  
-    (*parser (wrap-parser-with-skips <Boolean>))
-    (*parser (wrap-parser-with-skips <Char>))
-    (*parser (wrap-parser-with-skips <Number>))
-    (*parser (wrap-parser-with-skips <String>))
-    (*parser (wrap-parser-with-skips <Symbol>))
-    (*delayed (lambda () (wrap-parser-with-skips <ProperList>)))
-    (*delayed (lambda () (wrap-parser-with-skips <ImproperList>)))
-    (*delayed (lambda () (wrap-parser-with-skips <Vector>)))
-    (*delayed (lambda () (wrap-parser-with-skips <Quoted>)))
-    (*delayed (lambda () (wrap-parser-with-skips <QuasiQuoted>)))
-    (*delayed (lambda () (wrap-parser-with-skips <Unquoted>)))
-    (*delayed (lambda () (wrap-parser-with-skips <UnquoteAndSpliced>)))
-    (*delayed (lambda () (wrap-parser-with-skips <CBName>)))
-    (*delayed (lambda () (wrap-parser-with-skips <InfixExtension>)))
-    (*disj 14)
-  
-  done))
-;;;;;;;;;;;;;;;;;;;; <SEXPR>
-  
 
 (define <sexpr-with-space>
     (new
@@ -361,10 +361,11 @@
             sexp))
         done))
 
+
 (define <ProperList>
     (new
         (*parser (char #\())
-        (*parser <Skip>) *star
+        (*parser <PrefixSkip>) *star
         (*parser (char #\)))
         (*caten 3)
         (*pack (lambda (_) '()))
@@ -379,6 +380,7 @@
         (*disj 2)
                 
     done))  
+
 
 (define <ImproperList>
     (new
@@ -439,6 +441,7 @@
         (*pack-with (lambda (qu sexp) (list 'unquote `(,@sexp))))
         
     done))
+
     
 (define <UnquoteAndSpliced>
   (new
@@ -446,6 +449,7 @@
     (*parser <sexpr>)    
     (*caten 2)
     (*pack-with (lambda (unq-shtrudel sexp) (list 'unquote-splicing `(,@sexp))))
+    
     done))
     
 
@@ -457,6 +461,7 @@
     (*pack-with (lambda (at-mark sexp) `(cbname ,sexp)))
     done))
 
+
 (define <CBNameSyntax2>
   (new
     (*parser (char #\{))
@@ -466,6 +471,7 @@
     (*pack-with (lambda (left-pret sexp right-pret) `(cbname ,sexp)))
     done))
     
+
 (define <CBName>
   (new
    (*parser <CBNameSyntax1>)
@@ -473,7 +479,6 @@
    (*disj 2)
   done))
   
-
 
 (define <InfixPrefixExtensionPrefix>
   (new
@@ -513,14 +518,6 @@
     done))
 
 
-(define <InfixExpression>
-  (new
-    (*delayed (lambda () <layer-1>))
-    (*parser <sexpr>)
-    (*disj 2)
-  done))
-
-
 (define <InfixExtension>
   (new
     (*parser <InfixPrefixExtensionPrefix>)
@@ -550,6 +547,20 @@
 (define append-left
   (lambda (num lst)
     (fold-left func num lst)))
+
+
+(define (reverse l) 
+   (fold-left (lambda (i j) 
+                (cons j i)) 
+              '() 
+              l)) 
+
+
+(define append-temp
+  (lambda (num lst)
+    (let ((reversed-list (reverse (cons (list (caar lst) num) lst)))
+            (last-element (car (reverse lst))))
+      (fold-left func2 (cadr last-element) (cdr reversed-list)))))
 
 
 (define <infix-operation-parser>
@@ -636,6 +647,7 @@
     
     done))
 
+
 (define <InfixParen>
   (new
     
@@ -647,38 +659,6 @@
       (lambda (open exp close)
        exp))
 
-    done))
-
-(define <layer-4-exp>
-  (new
-
-    (*parser <InfixNeg>)
-    (*parser <InfixParen>)
-    (*parser <InfixSymbol>)
-    (*disj 3)
-
-  done))
-
-(define <layer-4>
-  (new
-
-    (*parser (wrap-parser-with-skips <layer-4-exp>))
-
-    (*delayed (lambda () <layer-5>))
-    *plus
-    *maybe
-    
-    (*parser <InfixSkip>) *star
-
-    (*caten 3)
-    (*pack-with 
-        (lambda (name exp skip)
-            (if (car exp)
-                (cond ((null? (caadr exp)) name)
-                    ((eq? (caaadr exp) 'vector-ref)
-                        (fold-left func name (cadr exp)))
-                  ((cons name (caadr exp))))
-                name)))
     done))
 
 
@@ -695,6 +675,7 @@
         (list 'vector-ref exp)))
 
     done))
+
 
 (define <InfixFuncall>
   (new
@@ -720,6 +701,41 @@
         `(,@listExp)))
     
     done))
+
+
+(define <layer-4-exp>
+  (new
+
+    (*parser <InfixNeg>)
+    (*parser <InfixParen>)
+    (*parser <InfixSymbol>)
+    (*disj 3)
+
+  done))
+
+
+(define <layer-4>
+  (new
+
+    (*parser (wrap-parser-with-skips <InfixSkip> <layer-4-exp>))
+
+    (*delayed (lambda () <layer-5>))
+    *plus
+    *maybe
+    
+    (*parser <InfixSkip>) *star
+
+    (*caten 3)
+    (*pack-with 
+        (lambda (name exp skip)
+            (if (car exp)
+                (cond ((null? (caadr exp)) name)
+                    ((eq? (caaadr exp) 'vector-ref)
+                        (fold-left func name (cadr exp)))
+                  ((cons name (caadr exp))))
+                name)))
+    done))
+
     
 (define <layer-5>
   (new
@@ -730,20 +746,6 @@
 
   done))
 
-
-(define (reverse l) 
-   (fold-left (lambda (i j) 
-                (cons j i)) 
-              '() 
-              l)) 
-
-
-(define append-temp
-  (lambda (num lst)
-    (let ((reversed-list (reverse (cons (list (caar lst) num) lst)))
-            (last-element (car (reverse lst))))
-      (fold-left func2 (cadr last-element) (cdr reversed-list)))))
-    
 
 (define <layer-3> (<infix-operation-parser> <layer-3-op> <layer-4> append-temp))
 (define <layer-2> (<infix-operation-parser> <layer-2-op> <layer-3> append-left))
