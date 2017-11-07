@@ -637,7 +637,7 @@
   (new
     
     (*parser (char #\())
-    (*delayed (lambda () <layer-1>))
+    (*parser <InfixExpression>)
     (*parser (char #\)))
     (*caten 3)
     (*pack-with
@@ -678,41 +678,54 @@
                 name)))
     done))
 
-      
-(define <layer-5>
-    (new
-        (*parser (char #\[))
-        (*delayed (lambda () <layer-1>))
-        (*parser (char #\]))
-        (*caten 3)
-        
-        (*pack-with
-        (lambda (open exp close)
-            (list 'vector-ref exp)))
-        
-        (*parser (char #\())
-        (*delayed (lambda () <layer-1>))
-        
-        (*parser (char #\,))
-        (*delayed (lambda () <layer-1>))
-        (*caten 2)
-        (*pack-with 
-            (lambda (ch exp) exp))
-        *star
-        
-        (*caten 2)
-        (*pack-with 
-            (lambda (exp lexp) `(,exp ,@lexp)))
-        (*parser <epsilon>)
-        (*disj 2)
-        (*parser (char #\)))
-        (*caten 3)
-        (*pack-with (lambda (open listExp close)
-            `(,@listExp)))
-            
-        (*disj 2)
+
+(define <InfixArrayGet>
+  (new
+    
+    (*parser (char #\[))
+    (*parser <InfixExpression>)
+    (*parser (char #\]))
+    (*caten 3)
+    
+    (*pack-with
+    (lambda (open exp close)
+        (list 'vector-ref exp)))
 
     done))
+
+(define <InfixFuncall>
+  (new
+
+    (*parser (char #\())
+    (*parser <InfixExpression>)
+    
+    (*parser (char #\,))
+    (*parser <InfixExpression>)
+    (*caten 2)
+    (*pack-with 
+        (lambda (ch exp) exp))
+    *star
+    
+    (*caten 2)
+    (*pack-with 
+        (lambda (exp lexp) `(,exp ,@lexp)))
+    (*parser <epsilon>)
+    (*disj 2)
+    (*parser (char #\)))
+    (*caten 3)
+    (*pack-with (lambda (open listExp close)
+        `(,@listExp)))
+    
+    done))
+    
+(define <layer-5>
+  (new
+      
+    (*parser <InfixArrayGet>)
+    (*parser <InfixFuncall>)    
+    (*disj 2)
+
+  done))
 
 
 (define (reverse l) 
