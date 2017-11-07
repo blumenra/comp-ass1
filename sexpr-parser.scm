@@ -620,6 +620,9 @@
 
 (define <layer-4>
   (new
+
+    (*parser <InfixSkip>) *star
+  
     (*parser <op-sub>)
     *maybe
     (*parser <Number>)
@@ -629,6 +632,7 @@
         (if (car neg)
           `(,(cadr neg) ,num)
           num)))
+    
     
     (*parser (char #\())
     (*delayed (lambda () <layer-1>))
@@ -643,13 +647,21 @@
     
     (*disj 3)
 
+    (*parser <InfixSkip>) *star
+    
+    (*caten 3)
+    (*pack-with 
+        (lambda (skip-l infixExp skip-r) infixExp))
+
     (*delayed (lambda () <layer-5>))
     *plus
     *maybe
-   
-    (*caten 2)
+    
+    (*parser <InfixSkip>) *star
+
+    (*caten 3)
     (*pack-with 
-        (lambda (name exp)
+        (lambda (name exp skip)
             (if (car exp)
                 (cond ((null? (caadr exp)) name)
                     ((eq? (caaadr exp) 'vector-ref)
@@ -657,7 +669,6 @@
                   ((cons name (caadr exp))))
                 name)))
     done))
- 
 
       
 (define <layer-5>
