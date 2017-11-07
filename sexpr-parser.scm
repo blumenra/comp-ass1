@@ -456,7 +456,7 @@
     (*parser (char #\@))
     (*parser <sexpr>)    
     (*caten 2)
-    (*pack-with (lambda (at-mark sexp) sexp))
+    (*pack-with (lambda (at-mark sexp) `(cbname ,sexp)))
     done))
 
 (define <CBNameSyntax2>
@@ -465,7 +465,7 @@
     (*parser <sexpr>)
     (*parser (char #\}))
     (*caten 3)
-    (*pack-with (lambda (left-pret sexp right-pret) sexp))
+    (*pack-with (lambda (left-pret sexp right-pret) `(cbname ,sexp)))
     done))
     
 (define <CBName>
