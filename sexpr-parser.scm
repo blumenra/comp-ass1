@@ -618,11 +618,9 @@
     done))
 
 
-(define <layer-4>
+(define <InfixNeg>
   (new
 
-    (*parser <InfixSkip>) *star
-  
     (*parser <op-sub>)
     *maybe
     (*parser <Number>)
@@ -633,6 +631,10 @@
           `(,(cadr neg) ,num)
           num)))
     
+    done))
+
+(define <InfixParen>
+  (new
     
     (*parser (char #\())
     (*delayed (lambda () <layer-1>))
@@ -641,17 +643,23 @@
     (*pack-with
       (lambda (open exp close)
        exp))
-    
-    
+
+    done))
+
+(define <layer-4-exp>
+  (new
+
+    (*parser <InfixNeg>)
+    (*parser <InfixParen>)
     (*parser <InfixSymbol>)
-    
     (*disj 3)
 
-    (*parser <InfixSkip>) *star
-    
-    (*caten 3)
-    (*pack-with 
-        (lambda (skip-l infixExp skip-r) infixExp))
+  done))
+
+(define <layer-4>
+  (new
+
+    (*parser (wrap-parser-with-skips <layer-4-exp>))
 
     (*delayed (lambda () <layer-5>))
     *plus
