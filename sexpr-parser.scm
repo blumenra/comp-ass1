@@ -779,6 +779,13 @@
         (cons name exp)))
 
 
+(define func4
+  (lambda (name vectors)
+    (if
+      (null? (cdr vectors))
+      (car vectors)
+      (list 'vector-ref name (func4 (cadr vectors) (cddr vectors))))))
+
 
 (define <bla>
   (new
