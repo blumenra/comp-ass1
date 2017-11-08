@@ -205,6 +205,11 @@
         (*parser <digit-0-9>)
         *plus
         (*parser <letter-a-z>)
+        ; ;;;;;
+        ; (*parser (char #\^))
+        ; (*parser (char #\/))
+        ; (*disj 3)
+        ; ;;;;;
         *not-followed-by
          (*pack
             (lambda (numList)
@@ -656,10 +661,14 @@
     
     (*parser <InfixSkip>) *star
     (*parser <Number>)
+
+    (*delayed (lambda () <bla>))
     (*parser <InfixSymbol>)
     (*delayed (lambda () <InfixParen>))
+    
     (*parser <InfixSexprEscape>)
-    (*disj 4)
+    (*disj 5)
+
     (*caten 3)
     (*pack-with
       (lambda (neg skip num)
@@ -764,9 +773,25 @@
     
   done))
 
+
 (define func3
     (lambda (name exp)
         (cons name exp)))
+
+
+
+(define <bla>
+  (new
+
+    (*parser <InfixSymbol>)
+    (*delayed (lambda () <InfixFuncall>))
+    (*caten 2)
+    (*pack-with
+      (lambda (sym args)
+        `(,sym ,@args)))
+    
+  done))
+
 
 (define <layer-4>
   (new
@@ -796,8 +821,8 @@
 (define <layer-5>
   (new
       
-    (*parser <InfixArrayGet>)
     (*parser <InfixFuncall>)    
+    (*parser <InfixArrayGet>)
     (*disj 2)
 
   done))
